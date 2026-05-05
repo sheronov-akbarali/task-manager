@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="uz" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vazifalar Menejeri</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <span class="logo-icon">✦</span>
+        <span class="logo-text">Vazifalar</span>
+      </div>
+      <button class="sidebar-close" id="sidebarClose" aria-label="Yopish">✕</button>
+    </div>
+
+    <nav class="sidebar-nav">
+      <p class="nav-label">Filtrlar</p>
+      <ul class="nav-list" id="filterList">
+        <li class="nav-item active" data-filter="all">
+          <span class="nav-icon">📋</span>
+          <span class="nav-text">Barchasi</span>
+          <span class="nav-badge" id="badge-all">0</span>
+        </li>
+        <li class="nav-item" data-filter="today">
+          <span class="nav-icon">📅</span>
+          <span class="nav-text">Bugun</span>
+          <span class="nav-badge" id="badge-today">0</span>
+        </li>
+        <li class="nav-item" data-filter="upcoming">
+          <span class="nav-icon">🔜</span>
+          <span class="nav-text">Kelgusi</span>
+          <span class="nav-badge" id="badge-upcoming">0</span>
+        </li>
+        <li class="nav-item" data-filter="overdue">
+          <span class="nav-icon">⚠️</span>
+          <span class="nav-text">Muddati o'tgan</span>
+          <span class="nav-badge badge-danger" id="badge-overdue">0</span>
+        </li>
+        <li class="nav-item" data-filter="completed">
+          <span class="nav-icon">✅</span>
+          <span class="nav-text">Bajarilgan</span>
+          <span class="nav-badge badge-success" id="badge-completed">0</span>
+        </li>
+      </ul>
+
+      <p class="nav-label">Kategoriyalar</p>
+      <ul class="nav-list" id="categoryList">
+        <li class="nav-item" data-category="all">
+          <span class="nav-icon">🌐</span>
+          <span class="nav-text">Hammasi</span>
+        </li>
+        <li class="nav-item" data-category="work">
+          <span class="nav-icon">💼</span>
+          <span class="nav-text">Ish</span>
+        </li>
+        <li class="nav-item" data-category="personal">
+          <span class="nav-icon">👤</span>
+          <span class="nav-text">Shaxsiy</span>
+        </li>
+        <li class="nav-item" data-category="shopping">
+          <span class="nav-icon">🛒</span>
+          <span class="nav-text">Xarid</span>
+        </li>
+        <li class="nav-item" data-category="health">
+          <span class="nav-icon">❤️</span>
+          <span class="nav-text">Salomatlik</span>
+        </li>
+        <li class="nav-item" data-category="education">
+          <span class="nav-icon">📚</span>
+          <span class="nav-text">Ta'lim</span>
+        </li>
+      </ul>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="theme-toggle" id="themeToggle" aria-label="Mavzuni o'zgartirish">
+        <span class="theme-icon" id="themeIcon">🌙</span>
+        <span id="themeText">Tungi rejim</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Overlay -->
+  <div class="overlay" id="overlay"></div>
+
+  <!-- Main Content -->
+  <main class="main">
+    <!-- Top Bar -->
+    <header class="topbar">
+      <button class="menu-btn" id="menuBtn" aria-label="Menyu">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" class="search-input" id="searchInput" placeholder="Vazifalarni qidirish..." />
+        <button class="search-clear" id="searchClear" aria-label="Tozalash">✕</button>
+      </div>
+      <button class="add-btn" id="addTaskBtn">
+        <span>+</span> Vazifa qo'shish
+      </button>
+    </header>
+
+    <!-- Stats Dashboard -->
+    <section class="stats-section">
+      <div class="stats-grid">
+        <div class="stat-card stat-total">
+          <div class="stat-icon">📋</div>
+          <div class="stat-info">
+            <span class="stat-value" id="statTotal">0</span>
+            <span class="stat-label">Jami</span>
+          </div>
+        </div>
+        <div class="stat-card stat-completed">
+          <div class="stat-icon">✅</div>
+          <div class="stat-info">
+            <span class="stat-value" id="statCompleted">0</span>
+            <span class="stat-label">Bajarilgan</span>
+          </div>
+        </div>
+        <div class="stat-card stat-pending">
+          <div class="stat-icon">⏳</div>
+          <div class="stat-info">
+            <span class="stat-value" id="statPending">0</span>
+            <span class="stat-label">Kutilmoqda</span>
+          </div>
+        </div>
+        <div class="stat-card stat-overdue">
+          <div class="stat-icon">🔥</div>
+          <div class="stat-info">
+            <span class="stat-value" id="statOverdue">0</span>
+            <span class="stat-label">Muddati o'tgan</span>
+          </div>
+        </div>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-header">
+          <span class="progress-label">Umumiy progress</span>
+          <span class="progress-percent" id="progressPercent">0%</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill" style="width:0%"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Toolbar -->
+    <section class="toolbar">
+      <div class="priority-filters">
+        <button class="priority-btn active" data-priority="all">Barchasi</button>
+        <button class="priority-btn priority-high" data-priority="high">🔴 Yuqori</button>
+        <button class="priority-btn priority-medium" data-priority="medium">🟡 O'rta</button>
+        <button class="priority-btn priority-low" data-priority="low">🟢 Past</button>
+      </div>
+      <div class="sort-wrap">
+        <label class="sort-label" for="sortSelect">Saralash:</label>
+        <select class="sort-select" id="sortSelect">
+          <option value="created">Yaratilgan sana</option>
+          <option value="deadline">Muddat</option>
+          <option value="priority">Muhimlik</option>
+          <option value="alpha">Alifbo tartibida</option>
+        </select>
+      </div>
+    </section>
+
+    <!-- Task List -->
+    <section class="tasks-section">
+      <div class="tasks-header">
+        <h2 class="tasks-title" id="tasksTitle">Barcha vazifalar</h2>
+        <span class="tasks-count" id="tasksCount">0 ta vazifa</span>
+      </div>
+      <div class="task-list" id="taskList">
+        <!-- Tasks rendered here -->
+      </div>
+      <!-- Empty State -->
+      <div class="empty-state" id="emptyState" style="display:none">
+        <div class="empty-illustration">
+          <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="100" cy="100" r="80" fill="url(#grad1)" opacity="0.15"/>
+            <rect x="55" y="65" width="90" height="12" rx="6" fill="url(#grad1)" opacity="0.4"/>
+            <rect x="55" y="87" width="70" height="10" rx="5" fill="url(#grad1)" opacity="0.3"/>
+            <rect x="55" y="107" width="80" height="10" rx="5" fill="url(#grad1)" opacity="0.3"/>
+            <rect x="55" y="127" width="55" height="10" rx="5" fill="url(#grad1)" opacity="0.2"/>
+            <circle cx="42" cy="71" r="7" fill="url(#grad1)" opacity="0.5"/>
+            <circle cx="42" cy="92" r="7" fill="url(#grad1)" opacity="0.4"/>
+            <circle cx="42" cy="112" r="7" fill="url(#grad1)" opacity="0.3"/>
+            <circle cx="42" cy="132" r="7" fill="url(#grad1)" opacity="0.2"/>
+            <defs>
+              <linearGradient id="grad1" x1="0" y1="0" x2="200" y2="200" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#8B5CF6"/>
+                <stop offset="1" stop-color="#3B82F6"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <h3 class="empty-title">Vazifalar yo'q</h3>
+        <p class="empty-desc">Yangi vazifa qo'shish uchun yuqoridagi tugmani bosing</p>
+        <button class="empty-btn" id="emptyAddBtn">+ Vazifa qo'shish</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Add/Edit Task Modal -->
+  <div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal" id="taskModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modalTitle">Yangi vazifa</h2>
+        <button class="modal-close" id="modalClose" aria-label="Yopish">✕</button>
+      </div>
+      <div class="modal-body">
+        <form id="taskForm" novalidate>
+          <div class="form-group">
+            <label class="form-label" for="taskTitle">Sarlavha <span class="required">*</span></label>
+            <input type="text" class="form-input" id="taskTitle" placeholder="Vazifa sarlavhasini kiriting..." maxlength="100" required />
+            <span class="form-error" id="titleError"></span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="taskDesc">Tavsif</label>
+            <textarea class="form-input form-textarea" id="taskDesc" placeholder="Qo'shimcha ma'lumot..." rows="3" maxlength="500"></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="taskDeadline">Muddat</label>
+              <input type="datetime-local" class="form-input" id="taskDeadline" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="taskPriority">Muhimlik</label>
+              <select class="form-input form-select" id="taskPriority">
+                <option value="medium">🟡 O'rta</option>
+                <option value="high">🔴 Yuqori</option>
+                <option value="low">🟢 Past</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="taskCategory">Kategoriya</label>
+              <select class="form-input form-select" id="taskCategory">
+                <option value="work">💼 Ish</option>
+                <option value="personal">👤 Shaxsiy</option>
+                <option value="shopping">🛒 Xarid</option>
+                <option value="health">❤️ Salomatlik</option>
+                <option value="education">📚 Ta'lim</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="taskReminder">Eslatma</label>
+              <select class="form-input form-select" id="taskReminder">
+                <option value="none">Yo'q</option>
+                <option value="5">5 daqiqa oldin</option>
+                <option value="15">15 daqiqa oldin</option>
+                <option value="30">30 daqiqa oldin</option>
+                <option value="60">1 soat oldin</option>
+                <option value="1440">1 kun oldin</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Subtasks -->
+          <div class="form-group">
+            <label class="form-label">Kichik vazifalar</label>
+            <div class="subtask-input-wrap">
+              <input type="text" class="form-input subtask-input" id="subtaskInput" placeholder="Kichik vazifa qo'shish..." maxlength="100" />
+              <button type="button" class="subtask-add-btn" id="subtaskAddBtn">+</button>
+            </div>
+            <ul class="subtask-list" id="subtaskList"></ul>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-ghost" id="cancelBtn">Bekor qilish</button>
+            <button type="submit" class="btn btn-primary" id="saveBtn">Saqlash</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
