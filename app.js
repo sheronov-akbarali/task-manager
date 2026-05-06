@@ -1,558 +1,528 @@
-// ===== STATE =====
-let tasks = JSON.parse(localStorage.getItem('taskflow_tasks') || '[]');
-let editingId = null;
-let currentFilter = 'all';
-let currentCat = 'all';
-let currentPriority = 'all';
-let currentSort = 'created';
-let subtasks = [];
-let notifTimers = {};
+// ===== MA'LUMOTLAR =====
+let vazifalar = JSON.parse(localStorage.getItem('taskflow_v2') || '[]');
+let tahrirlashId = null;
+let joriyFilter = 'all';
+let joriyKat = 'all';
+let joriyPrioritet = 'all';
+let joriySort = 'yangi';
+let kichikVazifalar = [];
+let sudralayotgan = null;
 
-// ===== INIT =====
+// ===== ISHGA TUSHIRISH =====
 document.addEventListener('DOMContentLoaded', () => {
-  requestNotifPermission();
-  render();
-  updateBadges();
-  startNotifChecker();
-  bindEvents();
-  setInterval(render, 60000); // refresh every minute for overdue
+  demoVazifalarQosh();
+  sahifaYangilash();
+  bildirishnomaTekshir();
+  setInterval(muddatTekshir, 30000);
+  muddatTekshir();
+  hodisalarBoglash();
 });
 
-// ===== BIND EVENTS =====
-function bindEvents() {
-  document.getElementById('openModal').onclick = () => openModal();
-  document.getElementById('closeModal').onclick = closeModal;
-  document.getElementById('cancelModal').onclick = closeModal;
-  document.getElementById('saveTask').onclick = saveTask;
-  document.getElementById('modalOverlay').onclick = (e) => { if(e.target.id==='modalOverlay') closeModal(); };
-  document.getElementById('themeToggle').onclick = toggleTheme;
-  document.getElementById('sidebarToggle').onclick = toggleSidebar;
-  document.getElementById('searchInput').oninput = render;
-  document.getElementById('sortSelect').onchange = (e) => { currentSort = e.target.value; render(); };
-  document.getElementById('taskTitle').oninput = function() {
-    document.getElementById('charCount').textContent = this.value.length + '/100';
+// ===== HODISALAR =====
+function hodisalarBoglash() {
+  document.getElementById('openModalBtn').onclick = () => modalOch();
+  document.getElementById('closeModalBtn').onclick = modalYop;
+  document.getElementById('cancelModalBtn').onclick = modalYop;
+  document.getElementById('saveTaskBtn').onclick = vazifaSaqla;
+  document.getElementById('modalBg').onclick = (e) => { if(e.target.id==='modalBg') modalYop(); };
+  document.getElementById('searchInput').oninput = royhatKorsatish;
+  document.getElementById('sortSel').onchange = (e) => { joriySort = e.target.value; royhatKorsatish(); };
+  document.getElementById('fTitle').oninput = function() {
+    document.getElementById('fTitleCount').textContent = this.value.length + '/100';
   };
-  document.getElementById('addSubtask').onclick = addSubtaskItem;
-  document.getElementById('subtaskInput').onkeydown = (e) => { if(e.key==='Enter') addSubtaskItem(); };
+  document.getElementById('addSubBtn').onclick = kichikVazifaQosh;
+  document.getElementById('fSubInput').onkeydown = (e) => { if(e.key==='Enter') kichikVazifaQosh(); };
   document.getElementById('allowNotif').onclick = () => {
     Notification.requestPermission().then(p => {
-      if(p==='granted') { showToast('Bildirishnomalar yoqildi! 🔔','success'); }
-      document.getElementById('notifBanner').style.display='none';
+      if(p==='granted') xabar('Bildirishnomalar yoqildi! 🔔','success');
+      document.getElementById('notifBanner').classList.remove('show');
     });
   };
   document.getElementById('dismissBanner').onclick = () => {
-    document.getElementById('notifBanner').style.display='none';
+    document.getElementById('notifBanner').classList.remove('show');
+  };
+  document.getElementById('themeBtn').onclick = temaAlmashtir;
+  document.getElementById('burgerBtn').onclick = () => {
+    document.getElementById('sidebar').classList.toggle('mini');
   };
 
-  // Nav filters
-  document.querySelectorAll('.nav-item').forEach(btn => {
+  document.querySelectorAll('.sn-item').forEach(btn => {
     btn.onclick = () => {
-      document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('.sn-item').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      currentFilter = btn.dataset.filter;
-      updatePageTitle();
-      render();
+      joriyFilter = btn.dataset.filter;
+      sahifaNominiYangilash();
+      royhatKorsatish();
     };
   });
 
-  // Category filters
-  document.querySelectorAll('.cat-item').forEach(btn => {
+  document.querySelectorAll('.sc-item').forEach(btn => {
     btn.onclick = () => {
-      document.querySelectorAll('.cat-item').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('.sc-item').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      currentCat = btn.dataset.cat;
-      render();
+      joriyKat = btn.dataset.cat;
+      royhatKorsatish();
     };
   });
 
-  // Priority filters
-  document.querySelectorAll('.pf-btn').forEach(btn => {
+  document.querySelectorAll('.pt').forEach(btn => {
     btn.onclick = () => {
-      document.querySelectorAll('.pf-btn').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('.pt').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      currentPriority = btn.dataset.priority;
-      render();
+      joriyPrioritet = btn.dataset.p;
+      royhatKorsatish();
     };
   });
-}
 
-// ===== NOTIFICATION PERMISSION =====
-function requestNotifPermission() {
-  if (!('Notification' in window)) return;
-  if (Notification.permission === 'default') {
-    document.getElementById('notifBanner').style.display = 'flex';
+  const tema = localStorage.getItem('taskflow_tema');
+  if(tema === 'dark') {
+    document.documentElement.setAttribute('data-theme','dark');
+    document.getElementById('themeEmoji').textContent = '☀️';
+    document.getElementById('themeText').textContent = 'Kunduzgi rejim';
   }
 }
 
-// ===== NOTIFICATION CHECKER =====
-function startNotifChecker() {
-  setInterval(checkDeadlines, 30000);
-  checkDeadlines();
+// ===== BILDIRISHNOMA =====
+function bildirishnomaTekshir() {
+  if(!('Notification' in window)) return;
+  if(Notification.permission === 'default') {
+    document.getElementById('notifBanner').classList.add('show');
+  }
 }
 
-function checkDeadlines() {
-  const now = new Date();
-  tasks.forEach(task => {
-    if (task.completed || !task.deadline) return;
-    const deadline = new Date(task.deadline);
-    const diff = deadline - now;
-    const reminderMs = (task.reminder || 0) * 60 * 1000;
+function muddatTekshir() {
+  const hozir = new Date();
+  let ozgardi = false;
+  vazifalar.forEach(v => {
+    if(v.bajarilgan || !v.muddat) return;
+    const muddat = new Date(v.muddat);
+    const farq = muddat - hozir;
+    const eslatmaMs = (v.eslatma || 0) * 60000;
 
-    // Overdue notification
-    if (diff < 0 && !task.overdueNotified) {
-      sendNotification(
-        '⏰ Muddati o\'tdi!',
-        `"${task.title}" vazifasining muddati o'tib ketdi!`,
-        'error'
-      );
-      task.overdueNotified = true;
-      saveTasks();
-      document.getElementById('notifyDot').style.display = 'block';
+    if(farq < 0 && !v.muddatOtdiXabar) {
+      bildirishnomayuborish('Muddati otdi!', '"' + v.nomi + '" vazifasining muddati otib ketdi!', 'error');
+      v.muddatOtdiXabar = true;
+      ozgardi = true;
+      document.getElementById('bellDot').classList.add('show');
     }
-
-    // Reminder notification
-    if (reminderMs > 0 && diff > 0 && diff <= reminderMs && !task.reminderNotified) {
-      const mins = Math.round(diff / 60000);
-      sendNotification(
-        '🔔 Eslatma!',
-        `"${task.title}" vazifasi ${mins} daqiqadan keyin tugaydi!`,
-        'warning'
-      );
-      task.reminderNotified = true;
-      saveTasks();
-      document.getElementById('notifyDot').style.display = 'block';
+    if(eslatmaMs > 0 && farq > 0 && farq <= eslatmaMs && !v.eslatmaXabar) {
+      const daqiqa = Math.round(farq / 60000);
+      bildirishnomayuborish('Eslatma!', '"' + v.nomi + '" ' + daqiqa + ' daqiqadan keyin tugaydi!', 'warning');
+      v.eslatmaXabar = true;
+      ozgardi = true;
+      document.getElementById('bellDot').classList.add('show');
     }
   });
+  if(ozgardi) { saqlash(); royhatKorsatish(); }
 }
 
-function sendNotification(title, body, type) {
-  // Browser notification
-  if (Notification.permission === 'granted') {
-    new Notification(title, {
-      body: body,
-      icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">⚡</text></svg>',
-      badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">⚡</text></svg>'
-    });
+function bildirishnomayuborish(sarlavha, matn, tur) {
+  if(Notification.permission === 'granted') {
+    new Notification(sarlavha, { body: matn });
   }
-  // In-app toast
-  showToast(body, type);
+  xabar(matn, tur);
 }
 
-// ===== TOAST =====
-function showToast(msg, type='info') {
-  const icons = { success:'✅', error:'🔥', warning:'⚠️', info:'💡' };
-  const container = document.getElementById('toastContainer');
-  const toast = document.createElement('div');
-  toast.className = `toast ${type}`;
-  toast.innerHTML = `
-    <span class="toast-icon">${icons[type]||'💡'}</span>
-    <span class="toast-msg">${msg}</span>
-    <button class="toast-close" onclick="this.parentElement.remove()">✕</button>
-  `;
-  container.appendChild(toast);
-  setTimeout(() => {
-    toast.classList.add('hide');
-    setTimeout(() => toast.remove(), 300);
-  }, 4000);
+// ===== XABAR (TOAST) =====
+function xabar(matn, tur) {
+  tur = tur || 'info';
+  var ikonlar = { success:'✅', error:'🔥', warning:'⚠️', info:'💡' };
+  var wrap = document.getElementById('toastWrap');
+  var el = document.createElement('div');
+  el.className = 'toast t-' + tur;
+  el.innerHTML = '<span class="toast-ico">' + (ikonlar[tur]||'💡') + '</span>' +
+    '<span class="toast-msg">' + matn + '</span>' +
+    '<button class="toast-x" onclick="this.parentElement.remove()">✕</button>';
+  wrap.appendChild(el);
+  setTimeout(function() {
+    el.classList.add('hide');
+    setTimeout(function() { el.remove(); }, 300);
+  }, 4500);
 }
 
 // ===== MODAL =====
-function openModal(task=null) {
-  editingId = task ? task.id : null;
-  subtasks = task ? [...(task.subtasks||[])] : [];
-  document.getElementById('modalTitle').textContent = task ? 'Vazifani tahrirlash' : 'Yangi vazifa';
-  document.getElementById('taskTitle').value = task ? task.title : '';
-  document.getElementById('taskDesc').value = task ? task.desc : '';
-  document.getElementById('taskPriority').value = task ? task.priority : 'medium';
-  document.getElementById('taskCategory').value = task ? task.category : 'work';
-  document.getElementById('taskReminder').value = task ? (task.reminder||0) : 0;
-  document.getElementById('charCount').textContent = (task?task.title.length:0)+'/100';
-
-  if (task && task.deadline) {
-    const d = new Date(task.deadline);
-    document.getElementById('taskDate').value = d.toISOString().split('T')[0];
-    document.getElementById('taskTime').value = d.toTimeString().slice(0,5);
+function modalOch(vazifa) {
+  vazifa = vazifa || null;
+  tahrirlashId = vazifa ? vazifa.id : null;
+  kichikVazifalar = vazifa ? JSON.parse(JSON.stringify(vazifa.kichikVazifalar || [])) : [];
+  document.getElementById('modalHeadTitle').textContent = vazifa ? 'Vazifani tahrirlash' : 'Yangi vazifa';
+  document.getElementById('fTitle').value = vazifa ? vazifa.nomi : '';
+  document.getElementById('fDesc').value = vazifa ? vazifa.tavsif : '';
+  document.getElementById('fPriority').value = vazifa ? vazifa.prioritet : 'urta';
+  document.getElementById('fCat').value = vazifa ? vazifa.kategoriya : 'ish';
+  document.getElementById('fReminder').value = vazifa ? (vazifa.eslatma || 0) : 0;
+  document.getElementById('fTitleCount').textContent = (vazifa ? vazifa.nomi.length : 0) + '/100';
+  if(vazifa && vazifa.muddat) {
+    var d = new Date(vazifa.muddat);
+    document.getElementById('fDate').value = d.toISOString().split('T')[0];
+    document.getElementById('fTime').value = d.toTimeString().slice(0,5);
   } else {
-    document.getElementById('taskDate').value = '';
-    document.getElementById('taskTime').value = '';
+    document.getElementById('fDate').value = '';
+    document.getElementById('fTime').value = '';
   }
-
-  renderSubtaskList();
-  document.getElementById('modalOverlay').classList.add('active');
-  document.getElementById('taskTitle').focus();
+  kichikRoyhatKorsatish();
+  document.getElementById('modalBg').classList.add('open');
+  setTimeout(function() { document.getElementById('fTitle').focus(); }, 100);
 }
 
-function closeModal() {
-  document.getElementById('modalOverlay').classList.remove('active');
-  editingId = null; subtasks = [];
+function modalYop() {
+  document.getElementById('modalBg').classList.remove('open');
+  tahrirlashId = null;
+  kichikVazifalar = [];
 }
 
-// ===== SUBTASKS =====
-function addSubtaskItem() {
-  const input = document.getElementById('subtaskInput');
-  const val = input.value.trim();
-  if (!val) return;
-  subtasks.push({ id: Date.now(), text: val, done: false });
-  input.value = '';
-  renderSubtaskList();
+// ===== KICHIK VAZIFALAR =====
+function kichikVazifaQosh() {
+  var inp = document.getElementById('fSubInput');
+  var qiymat = inp.value.trim();
+  if(!qiymat) return;
+  kichikVazifalar.push({ id: Date.now(), matn: qiymat, bajarilgan: false });
+  inp.value = '';
+  kichikRoyhatKorsatish();
 }
 
-function renderSubtaskList() {
-  const ul = document.getElementById('subtaskList');
-  ul.innerHTML = subtasks.map((s,i) => `
-    <li>
-      <span>${s.text}</span>
-      <button onclick="subtasks.splice(${i},1);renderSubtaskList()">✕</button>
-    </li>
-  `).join('');
+function kichikRoyhatKorsatish() {
+  document.getElementById('subList').innerHTML = kichikVazifalar.map(function(s, i) {
+    return '<li><span>' + xavfsizMatn(s.matn) + '</span>' +
+      '<button onclick="kichikOchir(' + i + ')">✕</button></li>';
+  }).join('');
 }
 
-// ===== SAVE TASK =====
-function saveTask() {
-  const title = document.getElementById('taskTitle').value.trim();
-  if (!title) { showToast('Vazifa nomini kiriting!','error'); return; }
+function kichikOchir(i) {
+  kichikVazifalar.splice(i, 1);
+  kichikRoyhatKorsatish();
+}
 
-  const dateVal = document.getElementById('taskDate').value;
-  const timeVal = document.getElementById('taskTime').value || '23:59';
-  let deadline = null;
-  if (dateVal) deadline = new Date(dateVal + 'T' + timeVal).toISOString();
+// ===== VAZIFA SAQLASH =====
+function vazifaSaqla() {
+  var nomi = document.getElementById('fTitle').value.trim();
+  if(!nomi) { xabar("Vazifa nomini kiriting!", 'error'); return; }
+  var sana = document.getElementById('fDate').value;
+  var vaqt = document.getElementById('fTime').value || '23:59';
+  var muddat = sana ? new Date(sana + 'T' + vaqt).toISOString() : null;
 
-  const taskData = {
-    id: editingId || Date.now(),
-    title,
-    desc: document.getElementById('taskDesc').value.trim(),
-    priority: document.getElementById('taskPriority').value,
-    category: document.getElementById('taskCategory').value,
-    reminder: parseInt(document.getElementById('taskReminder').value),
-    deadline,
-    subtasks: [...subtasks],
-    completed: false,
-    createdAt: editingId ? (tasks.find(t=>t.id===editingId)||{}).createdAt || Date.now() : Date.now(),
-    overdueNotified: false,
-    reminderNotified: false
+  var yangiVazifa = {
+    id: tahrirlashId || Date.now(),
+    nomi: nomi,
+    tavsif: document.getElementById('fDesc').value.trim(),
+    prioritet: document.getElementById('fPriority').value,
+    kategoriya: document.getElementById('fCat').value,
+    eslatma: parseInt(document.getElementById('fReminder').value),
+    muddat: muddat,
+    kichikVazifalar: JSON.parse(JSON.stringify(kichikVazifalar)),
+    bajarilgan: false,
+    yaratilgan: Date.now(),
+    muddatOtdiXabar: false,
+    eslatmaXabar: false
   };
 
-  if (editingId) {
-    const idx = tasks.findIndex(t=>t.id===editingId);
-    if (idx>-1) {
-      taskData.completed = tasks[idx].completed;
-      tasks[idx] = taskData;
+  if(tahrirlashId) {
+    var idx = vazifalar.findIndex(function(v) { return v.id === tahrirlashId; });
+    if(idx > -1) {
+      yangiVazifa.bajarilgan = vazifalar[idx].bajarilgan;
+      yangiVazifa.yaratilgan = vazifalar[idx].yaratilgan;
+      vazifalar[idx] = yangiVazifa;
     }
-    showToast('Vazifa yangilandi! ✏️','success');
+    xabar('Vazifa yangilandi!', 'success');
   } else {
-    tasks.unshift(taskData);
-    showToast('Yangi vazifa qo\'shildi! 🎉','success');
+    vazifalar.unshift(yangiVazifa);
+    xabar("Yangi vazifa qo'shildi! 🎉", 'success');
   }
-
-  saveTasks();
-  closeModal();
-  render();
-  updateBadges();
+  saqlash();
+  modalYop();
+  sahifaYangilash();
 }
 
-// ===== TOGGLE COMPLETE =====
-function toggleComplete(id) {
-  const task = tasks.find(t=>t.id===id);
-  if (!task) return;
-  task.completed = !task.completed;
-  if (task.completed) showToast(`"${task.title}" bajarildi! 🎉`, 'success');
-  saveTasks(); render(); updateBadges();
+// ===== BAJARILGAN =====
+function bajarilganBelgila(id) {
+  var v = vazifalar.find(function(v) { return v.id === id; });
+  if(!v) return;
+  v.bajarilgan = !v.bajarilgan;
+  if(v.bajarilgan) xabar('"' + v.nomi + '" bajarildi! 🎉', 'success');
+  saqlash();
+  sahifaYangilash();
 }
 
-// ===== TOGGLE SUBTASK =====
-function toggleSubtask(taskId, subId) {
-  const task = tasks.find(t=>t.id===taskId);
-  if (!task) return;
-  const sub = task.subtasks.find(s=>s.id===subId);
-  if (sub) sub.done = !sub.done;
-  saveTasks(); render();
+// ===== O'CHIRISH =====
+function vazifaOchir(id) {
+  var v = vazifalar.find(function(v) { return v.id === id; });
+  if(!v) return;
+  if(!confirm('"' + v.nomi + '" ochirisinmi?')) return;
+  vazifalar = vazifalar.filter(function(v) { return v.id !== id; });
+  saqlash();
+  sahifaYangilash();
+  xabar("Vazifa o'chirildi", 'warning');
 }
 
-// ===== DELETE TASK =====
-function deleteTask(id) {
-  const task = tasks.find(t=>t.id===id);
-  if (!task) return;
-  if (!confirm(`"${task.title}" o'chirilsinmi?`)) return;
-  tasks = tasks.filter(t=>t.id!==id);
-  saveTasks(); render(); updateBadges();
-  showToast('Vazifa o\'chirildi','warning');
+// ===== LOCALSTORAGE =====
+function saqlash() {
+  localStorage.setItem('taskflow_v2', JSON.stringify(vazifalar));
 }
 
-// ===== SAVE TO LOCALSTORAGE =====
-function saveTasks() {
-  localStorage.setItem('taskflow_tasks', JSON.stringify(tasks));
-}
+// ===== FILTERLASH =====
+function filterlash() {
+  var hozir = new Date();
+  var bugun = hozir.toDateString();
+  var qidiruv = document.getElementById('searchInput').value.toLowerCase();
 
-// ===== FILTER & SORT =====
-function getFilteredTasks() {
-  const now = new Date();
-  const today = now.toDateString();
-  const search = document.getElementById('searchInput').value.toLowerCase();
-
-  let filtered = tasks.filter(t => {
-    // Search
-    if (search && !t.title.toLowerCase().includes(search) && !t.desc.toLowerCase().includes(search)) return false;
-    // Category
-    if (currentCat !== 'all' && t.category !== currentCat) return false;
-    // Priority
-    if (currentPriority !== 'all' && t.priority !== currentPriority) return false;
-    // Nav filter
-    if (currentFilter === 'completed') return t.completed;
-    if (currentFilter === 'today') {
-      if (!t.deadline) return false;
-      return new Date(t.deadline).toDateString() === today;
-    }
-    if (currentFilter === 'upcoming') {
-      if (!t.deadline || t.completed) return false;
-      return new Date(t.deadline) > now;
-    }
-    if (currentFilter === 'overdue') {
-      if (!t.deadline || t.completed) return false;
-      return new Date(t.deadline) < now;
-    }
+  var natija = vazifalar.filter(function(v) {
+    if(qidiruv && v.nomi.toLowerCase().indexOf(qidiruv) === -1 && (v.tavsif||'').toLowerCase().indexOf(qidiruv) === -1) return false;
+    if(joriyKat !== 'all' && v.kategoriya !== joriyKat) return false;
+    if(joriyPrioritet !== 'all' && v.prioritet !== joriyPrioritet) return false;
+    if(joriyFilter === 'bajarilgan') return v.bajarilgan;
+    if(joriyFilter === 'bugun') return v.muddat && new Date(v.muddat).toDateString() === bugun && !v.bajarilgan;
+    if(joriyFilter === 'kelgusi') return v.muddat && new Date(v.muddat) > hozir && !v.bajarilgan;
+    if(joriyFilter === 'otgan') return v.muddat && new Date(v.muddat) < hozir && !v.bajarilgan;
     return true;
   });
 
-  // Sort
-  filtered.sort((a,b) => {
-    if (currentSort === 'deadline') {
-      if (!a.deadline) return 1; if (!b.deadline) return -1;
-      return new Date(a.deadline) - new Date(b.deadline);
-    }
-    if (currentSort === 'priority') {
-      const p = {high:0,medium:1,low:2};
-      return p[a.priority] - p[b.priority];
-    }
-    if (currentSort === 'alpha') return a.title.localeCompare(b.title);
-    return b.createdAt - a.createdAt;
-  });
-
-  return filtered;
-}
-
-// ===== RENDER =====
-function render() {
-  const filtered = getFilteredTasks();
-  const list = document.getElementById('taskList');
-  const empty = document.getElementById('emptyState');
-
-  if (filtered.length === 0) {
-    list.innerHTML = '';
-    empty.style.display = 'block';
+  if(joriySort === 'muddat') {
+    natija.sort(function(a,b) {
+      if(!a.muddat) return 1;
+      if(!b.muddat) return -1;
+      return new Date(a.muddat) - new Date(b.muddat);
+    });
+  } else if(joriySort === 'prioritet') {
+    var p = {yuqori:0, urta:1, past:2};
+    natija.sort(function(a,b) { return p[a.prioritet] - p[b.prioritet]; });
+  } else if(joriySort === 'alifbo') {
+    natija.sort(function(a,b) { return a.nomi.localeCompare(b.nomi); });
   } else {
-    empty.style.display = 'none';
-    list.innerHTML = filtered.map(task => renderTask(task)).join('');
+    natija.sort(function(a,b) { return b.yaratilgan - a.yaratilgan; });
+  }
+  return natija;
+}
+
+// ===== ROYHAT =====
+function royhatKorsatish() {
+  var natija = filterlash();
+  var grid = document.getElementById('taskGrid');
+  var empty = document.getElementById('emptyBox');
+  if(natija.length === 0) {
+    grid.innerHTML = '';
+    empty.classList.add('show');
+  } else {
+    empty.classList.remove('show');
+    grid.innerHTML = natija.map(function(v) { return vazifaKartasi(v); }).join('');
+  }
+  statistikaYangilash();
+}
+
+// ===== VAZIFA KARTASI =====
+function vazifaKartasi(v) {
+  var hozir = new Date();
+  var muddatOtdi = v.muddat && !v.bajarilgan && new Date(v.muddat) < hozir;
+  var bugunMi = v.muddat && new Date(v.muddat).toDateString() === hozir.toDateString();
+  var pLabels = { yuqori:'Yuqori', urta:"O'rta", past:'Past' };
+  var katLabels = { ish:'Ish', shaxsiy:'Shaxsiy', xarid:'Xarid', salomatlik:'Salomatlik', talim:"Ta'lim" };
+  var katEmoji = { ish:'💼', shaxsiy:'👤', xarid:'🛒', salomatlik:'❤️', talim:'📚' };
+
+  var muddatHtml = '';
+  if(v.muddat) {
+    var d = new Date(v.muddat);
+    var sana = d.toLocaleDateString('uz-UZ', {day:'2-digit', month:'short', year:'numeric'});
+    var vaqt = d.toLocaleTimeString('uz-UZ', {hour:'2-digit', minute:'2-digit'});
+    var cls = muddatOtdi ? 'red' : bugunMi ? 'orange' : '';
+    var ikon = muddatOtdi ? '🔥' : bugunMi ? '⚡' : '📅';
+    muddatHtml = '<span class="tc-deadline ' + cls + '">' + ikon + ' ' + sana + ' ' + vaqt + '</span>';
   }
 
-  updateStats();
-}
-
-function renderTask(task) {
-  const now = new Date();
-  const isOverdue = task.deadline && !task.completed && new Date(task.deadline) < now;
-  const isToday = task.deadline && new Date(task.deadline).toDateString() === now.toDateString();
-
-  const priorityLabels = { high:'Yuqori', medium:"O'rta", low:'Past' };
-  const catLabels = { work:'💼 Ish', personal:'👤 Shaxsiy', shopping:'🛒 Xarid', health:'❤️ Salomatlik', education:'📚 Ta\'lim' };
-
-  let deadlineHtml = '';
-  if (task.deadline) {
-    const d = new Date(task.deadline);
-    const dateStr = d.toLocaleDateString('uz-UZ', {day:'2-digit',month:'short',year:'numeric'});
-    const timeStr = d.toLocaleTimeString('uz-UZ', {hour:'2-digit',minute:'2-digit'});
-    const cls = isOverdue ? 'overdue-text' : isToday ? 'today-text' : '';
-    const icon = isOverdue ? '🔥' : isToday ? '⚡' : '📅';
-    deadlineHtml = `<span class="task-deadline ${cls}">${icon} ${dateStr} ${timeStr}</span>`;
+  var subHtml = '';
+  if(v.kichikVazifalar && v.kichikVazifalar.length > 0) {
+    var bajCount = v.kichikVazifalar.filter(function(s) { return s.bajarilgan; }).length;
+    var foiz = Math.round((bajCount / v.kichikVazifalar.length) * 100);
+    subHtml = '<div class="tc-sub-progress">' +
+      '<div class="tc-sub-label">' + bajCount + '/' + v.kichikVazifalar.length + ' kichik vazifa bajarildi</div>' +
+      '<div class="tc-sub-track"><div class="tc-sub-fill" style="width:' + foiz + '%"></div></div>' +
+      '</div>';
   }
 
-  let subtaskHtml = '';
-  if (task.subtasks && task.subtasks.length > 0) {
-    const done = task.subtasks.filter(s=>s.done).length;
-    const pct = Math.round((done/task.subtasks.length)*100);
-    subtaskHtml = `
-      <div class="subtask-progress">
-        <span class="subtask-label">${done}/${task.subtasks.length} kichik vazifa</span>
-        <div class="subtask-bar-wrap">
-          <div class="subtask-bar-fill" style="width:${pct}%"></div>
-        </div>
-      </div>`;
-  }
-
-  return `
-    <div class="task-card ${task.completed?'completed':''} ${isOverdue?'overdue':''}"
-         draggable="true"
-         ondragstart="dragStart(event,'${task.id}')"
-         ondragover="dragOver(event)"
-         ondrop="dragDrop(event,'${task.id}')">
-      <button class="task-check ${task.completed?'checked':''}"
-              onclick="toggleComplete(${task.id})"
-              title="${task.completed?'Bajarilmagan deb belgilash':'Bajarilgan deb belgilash'}">
-        ${task.completed?'✓':''}
-      </button>
-      <div class="task-body">
-        <div class="task-title">${escHtml(task.title)}</div>
-        ${task.desc ? `<div class="task-desc">${escHtml(task.desc)}</div>` : ''}
-        <div class="task-meta">
-          <span class="task-badge badge-${task.priority}">${priorityLabels[task.priority]}</span>
-          <span class="task-cat">${catLabels[task.category]||task.category}</span>
-          ${deadlineHtml}
-        </div>
-        ${subtaskHtml}
-      </div>
-      <div class="task-actions">
-        <button class="task-btn edit" onclick="openModal(tasks.find(t=>t.id===${task.id}))" title="Tahrirlash">✏️</button>
-        <button class="task-btn delete" onclick="deleteTask(${task.id})" title="O'chirish">🗑️</button>
-      </div>
-    </div>`;
+  return '<div class="task-card ' + (v.bajarilgan ? 'done' : '') + ' ' + (muddatOtdi ? 'overdue-card' : '') + '"' +
+    ' draggable="true"' +
+    ' ondragstart="sudraStart(event,' + v.id + ')"' +
+    ' ondragover="sudraUstida(event)"' +
+    ' ondrop="sudraTushir(event,' + v.id + ')">' +
+    '<button class="tc-check ' + (v.bajarilgan ? 'checked' : '') + '"' +
+    ' onclick="bajarilganBelgila(' + v.id + ')">' +
+    (v.bajarilgan ? '✓' : '') + '</button>' +
+    '<div class="tc-body">' +
+    '<div class="tc-title">' + xavfsizMatn(v.nomi) + '</div>' +
+    (v.tavsif ? '<div class="tc-desc">' + xavfsizMatn(v.tavsif) + '</div>' : '') +
+    '<div class="tc-meta">' +
+    '<span class="badge b-' + v.prioritet + '">' + (pLabels[v.prioritet] || v.prioritet) + '</span>' +
+    '<span class="badge-cat">' + (katEmoji[v.kategoriya]||'') + ' ' + (katLabels[v.kategoriya]||v.kategoriya) + '</span>' +
+    muddatHtml +
+    '</div>' +
+    subHtml +
+    '</div>' +
+    '<div class="tc-actions">' +
+    '<button class="tc-btn edit" onclick="modalOch(vazifalar.find(function(v){return v.id===' + v.id + '}))" title="Tahrirlash">✏️</button>' +
+    '<button class="tc-btn del" onclick="vazifaOchir(' + v.id + ')" title="Ochirish">🗑️</button>' +
+    '</div></div>';
 }
 
-// ===== STATS =====
-function updateStats() {
-  const now = new Date();
-  const total = tasks.length;
-  const done = tasks.filter(t=>t.completed).length;
-  const pending = tasks.filter(t=>!t.completed).length;
-  const overdue = tasks.filter(t=>t.deadline && !t.completed && new Date(t.deadline)<now).length;
-  const pct = total > 0 ? Math.round((done/total)*100) : 0;
+// ===== STATISTIKA =====
+function statistikaYangilash() {
+  var hozir = new Date();
+  var bugun = hozir.toDateString();
+  var jami = vazifalar.length;
+  var bajarilgan = vazifalar.filter(function(v) { return v.bajarilgan; }).length;
+  var kutilmoqda = vazifalar.filter(function(v) { return !v.bajarilgan; }).length;
+  var otgan = vazifalar.filter(function(v) { return v.muddat && !v.bajarilgan && new Date(v.muddat) < hozir; }).length;
+  var kelgusi = vazifalar.filter(function(v) { return v.muddat && new Date(v.muddat) > hozir && !v.bajarilgan; }).length;
+  var foiz = jami > 0 ? Math.round((bajarilgan / jami) * 100) : 0;
 
-  document.getElementById('statTotal').textContent = total;
-  document.getElementById('statDone').textContent = done;
-  document.getElementById('statPending').textContent = pending;
-  document.getElementById('statOverdue').textContent = overdue;
-  document.getElementById('progressFill').style.width = pct + '%';
-  document.getElementById('progressPercent').textContent = pct + '%';
+  document.getElementById('stJami').textContent = jami;
+  document.getElementById('stBajarilgan').textContent = bajarilgan;
+  document.getElementById('stKutilmoqda').textContent = kutilmoqda;
+  document.getElementById('stOtgan').textContent = otgan;
+  document.getElementById('progressFill').style.width = foiz + '%';
+  document.getElementById('progressPct').textContent = foiz + '%';
+  document.getElementById('progressHint').textContent =
+    foiz === 0 ? 'Hali birorta vazifa bajarilmagan' :
+    foiz === 100 ? 'Barcha vazifalar bajarildi! 🎉' :
+    bajarilgan + ' ta bajarildi, ' + kutilmoqda + ' ta qoldi';
+
+  document.getElementById('cnt-all').textContent = kutilmoqda;
+  document.getElementById('cnt-bugun').textContent = vazifalar.filter(function(v) {
+    return v.muddat && new Date(v.muddat).toDateString() === bugun && !v.bajarilgan;
+  }).length;
+  document.getElementById('cnt-kelgusi').textContent = kelgusi;
+  document.getElementById('cnt-otgan').textContent = otgan;
+  document.getElementById('cnt-bajarilgan').textContent = bajarilgan;
 }
 
-function updateBadges() {
-  const now = new Date();
-  const today = now.toDateString();
-  document.getElementById('badge-all').textContent = tasks.filter(t=>!t.completed).length;
-  document.getElementById('badge-today').textContent = tasks.filter(t=>t.deadline && new Date(t.deadline).toDateString()===today && !t.completed).length;
-  document.getElementById('badge-upcoming').textContent = tasks.filter(t=>t.deadline && new Date(t.deadline)>now && !t.completed).length;
-  document.getElementById('badge-overdue').textContent = tasks.filter(t=>t.deadline && new Date(t.deadline)<now && !t.completed).length;
-  document.getElementById('badge-completed').textContent = tasks.filter(t=>t.completed).length;
-}
+// ===== SAHIFA =====
+function sahifaYangilash() { royhatKorsatish(); }
 
-// ===== PAGE TITLE =====
-function updatePageTitle() {
-  const titles = {
-    all: ['Barcha vazifalar', 'Bugun ham samarali bo\'ling!'],
-    today: ['Bugungi vazifalar', 'Bugun nima qilish kerak?'],
-    upcoming: ['Kelgusi vazifalar', 'Oldinda nima bor?'],
-    overdue: ['Muddati o\'tgan', 'Ularni tezda bajaring!'],
-    completed: ['Bajarilgan vazifalar', 'Ajoyib ish! 🎉']
+function sahifaNominiYangilash() {
+  var nomlar = {
+    all:        ['Barcha vazifalar',     'Bugun ham maqsadlaringizga erishishingiz mumkin!'],
+    bugun:      ['Bugungi vazifalar',    'Bugun nima qilish kerak?'],
+    kelgusi:    ['Kelgusi vazifalar',    'Oldinda nima bor?'],
+    otgan:      ["Muddati o'tgan",       'Ularni tezda bajaring!'],
+    bajarilgan: ['Bajarilgan vazifalar', 'Ajoyib ish! 🎉']
   };
-  const [title, sub] = titles[currentFilter] || titles.all;
-  document.getElementById('pageTitle').textContent = title;
-  document.getElementById('pageSubtitle').textContent = sub;
+  var info = nomlar[joriyFilter] || nomlar.all;
+  document.getElementById('pageTitle').textContent = info[0];
+  document.getElementById('pageSub').textContent = info[1];
 }
 
-// ===== THEME =====
-function toggleTheme() {
-  const html = document.documentElement;
-  const isDark = html.getAttribute('data-theme') === 'dark';
-  html.setAttribute('data-theme', isDark ? 'light' : 'dark');
-  document.getElementById('themeIcon').textContent = isDark ? '🌙' : '☀️';
-  document.getElementById('themeLabel').textContent = isDark ? 'Dark mode' : 'Light mode';
-  localStorage.setItem('taskflow_theme', isDark ? 'light' : 'dark');
-}
-
-// Load saved theme
-const savedTheme = localStorage.getItem('taskflow_theme');
-if (savedTheme) {
-  document.documentElement.setAttribute('data-theme', savedTheme);
-  if (savedTheme === 'dark') {
-    document.getElementById('themeIcon').textContent = '☀️';
-    document.getElementById('themeLabel').textContent = 'Light mode';
-  }
-}
-
-// ===== SIDEBAR TOGGLE =====
-function toggleSidebar() {
-  document.getElementById('sidebar').classList.toggle('collapsed');
+// ===== TEMA =====
+function temaAlmashtir() {
+  var html = document.documentElement;
+  var tungi = html.getAttribute('data-theme') === 'dark';
+  html.setAttribute('data-theme', tungi ? 'light' : 'dark');
+  document.getElementById('themeEmoji').textContent = tungi ? '🌙' : '☀️';
+  document.getElementById('themeText').textContent = tungi ? 'Tungi rejim' : 'Kunduzgi rejim';
+  localStorage.setItem('taskflow_tema', tungi ? 'light' : 'dark');
 }
 
 // ===== DRAG & DROP =====
-let dragId = null;
-function dragStart(e, id) { dragId = id; e.target.classList.add('dragging'); }
-function dragOver(e) { e.preventDefault(); }
-function dragDrop(e, targetId) {
+function sudraStart(e, id) {
+  sudralayotgan = id;
+  setTimeout(function() {
+    var el = e.target.closest('.task-card');
+    if(el) el.classList.add('dragging');
+  }, 0);
+}
+function sudraUstida(e) { e.preventDefault(); }
+function sudraTushir(e, targetId) {
   e.preventDefault();
-  if (!dragId || dragId == targetId) { dragId=null; return; }
-  const fromIdx = tasks.findIndex(t=>t.id==dragId);
-  const toIdx = tasks.findIndex(t=>t.id==targetId);
-  if (fromIdx>-1 && toIdx>-1) {
-    const [moved] = tasks.splice(fromIdx,1);
-    tasks.splice(toIdx,0,moved);
-    saveTasks(); render();
+  if(!sudralayotgan || sudralayotgan === targetId) { sudralayotgan = null; return; }
+  var fromIdx = vazifalar.findIndex(function(v) { return v.id === sudralayotgan; });
+  var toIdx = vazifalar.findIndex(function(v) { return v.id === targetId; });
+  if(fromIdx > -1 && toIdx > -1) {
+    var kochirildi = vazifalar.splice(fromIdx, 1)[0];
+    vazifalar.splice(toIdx, 0, kochirildi);
+    saqlash();
+    royhatKorsatish();
   }
-  dragId = null;
-  document.querySelectorAll('.task-card').forEach(c=>c.classList.remove('dragging'));
+  sudralayotgan = null;
+  document.querySelectorAll('.task-card').forEach(function(c) { c.classList.remove('dragging'); });
 }
 
-// ===== HELPERS =====
-function escHtml(str) {
-  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+// ===== XAVFSIZ MATN =====
+function xavfsizMatn(str) {
+  return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// ===== DEMO TASKS (first run) =====
-if (tasks.length === 0) {
-  const now = new Date();
-  const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate()+1);
-  const yesterday = new Date(now); yesterday.setDate(yesterday.getDate()-1);
-  const nextWeek = new Date(now); nextWeek.setDate(nextWeek.getDate()+7);
+// ===== DEMO VAZIFALAR =====
+function demoVazifalarQosh() {
+  if(vazifalar.length > 0) return;
+  var hozir = new Date();
+  var ertaga = new Date(hozir); ertaga.setDate(ertaga.getDate() + 1);
+  var kecha = new Date(hozir); kecha.setDate(kecha.getDate() - 1);
+  var keyingiHafta = new Date(hozir); keyingiHafta.setDate(keyingiHafta.getDate() + 7);
+  var bugunKechqurun = new Date(hozir.getFullYear(), hozir.getMonth(), hozir.getDate(), 18, 0);
 
-  tasks = [
+  vazifalar = [
     {
-      id: 1, title: 'Loyiha taqdimotini tayyorlash',
-      desc: 'Mijoz uchun yangi loyiha taqdimotini PowerPoint da tayyorlash',
-      priority: 'high', category: 'work',
-      deadline: tomorrow.toISOString(), reminder: 60,
-      subtasks: [
-        {id:11, text:'Slaydlar tuzish', done:true},
-        {id:12, text:'Grafiklar qo\'shish', done:false},
-        {id:13, text:'Matn tekshirish', done:false}
+      id:1, nomi:"Loyiha taqdimotini tayyorlash",
+      tavsif:"Mijoz uchun yangi loyiha taqdimotini tayyorlash va slaydlarni bezash",
+      prioritet:'yuqori', kategoriya:'ish',
+      muddat: ertaga.toISOString(), eslatma:60,
+      kichikVazifalar:[
+        {id:11, matn:"Slaydlar tuzish", bajarilgan:true},
+        {id:12, matn:"Grafiklar qo'shish", bajarilgan:false},
+        {id:13, matn:"Matn tekshirish", bajarilgan:false}
       ],
-      completed: false, createdAt: Date.now()-86400000,
-      overdueNotified: false, reminderNotified: false
+      bajarilgan:false, yaratilgan:Date.now()-86400000,
+      muddatOtdiXabar:false, eslatmaXabar:false
     },
     {
-      id: 2, title: 'Ingliz tili darsi',
-      desc: 'Online dars - B2 darajasi',
-      priority: 'medium', category: 'education',
-      deadline: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 18, 0).toISOString(),
-      reminder: 30, subtasks: [],
-      completed: false, createdAt: Date.now()-3600000,
-      overdueNotified: false, reminderNotified: false
+      id:2, nomi:"Ingliz tili darsi",
+      tavsif:"Online dars — B2 darajasi, grammatika mashqlari",
+      prioritet:'urta', kategoriya:'talim',
+      muddat: bugunKechqurun.toISOString(), eslatma:30,
+      kichikVazifalar:[],
+      bajarilgan:false, yaratilgan:Date.now()-3600000,
+      muddatOtdiXabar:false, eslatmaXabar:false
     },
     {
-      id: 3, title: 'Supermarketdan xarid qilish',
-      desc: 'Non, sut, tuxum, sabzavotlar',
-      priority: 'low', category: 'shopping',
-      deadline: null, reminder: 0, subtasks: [
-        {id:31, text:'Non', done:true},
-        {id:32, text:'Sut', done:true},
-        {id:33, text:'Tuxum', done:false}
+      id:3, nomi:"Supermarketdan xarid qilish",
+      tavsif:"Haftalik oziq-ovqat xaridi",
+      prioritet:'past', kategoriya:'xarid',
+      muddat:null, eslatma:0,
+      kichikVazifalar:[
+        {id:31, matn:"Non va sut", bajarilgan:true},
+        {id:32, matn:"Tuxum va sabzavot", bajarilgan:false},
+        {id:33, matn:"Meva va sharbat", bajarilgan:false}
       ],
-      completed: false, createdAt: Date.now()-7200000,
-      overdueNotified: false, reminderNotified: false
+      bajarilgan:false, yaratilgan:Date.now()-7200000,
+      muddatOtdiXabar:false, eslatmaXabar:false
     },
     {
-      id: 4, title: 'Hisobot yozish',
-      desc: 'Oylik moliyaviy hisobot',
-      priority: 'high', category: 'work',
-      deadline: yesterday.toISOString(), reminder: 0, subtasks: [],
-      completed: false, createdAt: Date.now()-172800000,
-      overdueNotified: false, reminderNotified: false
+      id:4, nomi:"Oylik hisobot yozish",
+      tavsif:"Moliyaviy hisobot va tahlil",
+      prioritet:'yuqori', kategoriya:'ish',
+      muddat: kecha.toISOString(), eslatma:0,
+      kichikVazifalar:[],
+      bajarilgan:false, yaratilgan:Date.now()-172800000,
+      muddatOtdiXabar:false, eslatmaXabar:false
     },
     {
-      id: 5, title: 'Sport zali',
-      desc: 'Haftalik mashg\'ulot',
-      priority: 'medium', category: 'health',
-      deadline: nextWeek.toISOString(), reminder: 60, subtasks: [],
-      completed: true, createdAt: Date.now()-259200000,
-      overdueNotified: false, reminderNotified: false
+      id:5, nomi:"Sport zali mashg'uloti",
+      tavsif:"Haftalik jismoniy mashqlar",
+      prioritet:'urta', kategoriya:'salomatlik',
+      muddat: keyingiHafta.toISOString(), eslatma:60,
+      kichikVazifalar:[],
+      bajarilgan:true, yaratilgan:Date.now()-259200000,
+      muddatOtdiXabar:false, eslatmaXabar:false
+    },
+    {
+      id:6, nomi:"Kitob o'qish",
+      tavsif:"Atomic Habits kitobini tugatish",
+      prioritet:'past', kategoriya:'shaxsiy',
+      muddat: keyingiHafta.toISOString(), eslatma:0,
+      kichikVazifalar:[
+        {id:61, matn:"1-5 boblar", bajarilgan:true},
+        {id:62, matn:"6-10 boblar", bajarilgan:true},
+        {id:63, matn:"11-20 boblar", bajarilgan:false}
+      ],
+      bajarilgan:false, yaratilgan:Date.now()-345600000,
+      muddatOtdiXabar:false, eslatmaXabar:false
     }
   ];
-  saveTasks();
+  saqlash();
 }
