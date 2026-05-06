@@ -4,6 +4,19 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>TaskFlow — Vazifalar Boshqaruvchisi</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json"/>
+  <meta name="theme-color" content="#6366f1"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+  <meta name="apple-mobile-web-app-title" content="TaskFlow"/>
+  <link rel="apple-touch-icon" href="icons/icon-192.png"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+
+  <!-- SEO -->
+  <meta name="description" content="TaskFlow — vazifalaringizni oson boshqaring, muddatlarni kuzating va eslatmalar oling"/>
+
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="style.css"/>
@@ -98,6 +111,10 @@
       <button class="theme-btn" id="themeBtn">
         <span id="themeEmoji">🌙</span>
         <span id="themeText">Tungi rejim</span>
+      </button>
+      <button class="install-side-btn" id="installSideBtn">
+        <span>⬇️</span>
+        <span id="installSideText">Ilovani yuklab olish</span>
       </button>
     </div>
   </aside>
@@ -287,6 +304,32 @@
 
 <!-- ===== TOASTS ===== -->
 <div class="toast-wrap" id="toastWrap"></div>
+
+<!-- ===== DOWNLOAD / INSTALL BANNER ===== -->
+<div class="install-banner" id="installBanner">
+  <div class="install-banner-content">
+    <div class="install-app-icon">⚡</div>
+    <div class="install-info">
+      <strong>TaskFlow ilovasini o'rnating</strong>
+      <span>Qurilmangizga yuklab oling — oflayn ham ishlaydi!</span>
+    </div>
+    <button class="install-btn" id="installBtn">
+      <span class="install-btn-icon">⬇️</span>
+      O'rnatish
+    </button>
+    <button class="install-close" id="installClose">✕</button>
+  </div>
+</div>
+
+<!-- ===== INSTALL SUCCESS MODAL ===== -->
+<div class="install-modal-bg" id="installModalBg">
+  <div class="install-modal">
+    <div class="install-modal-icon">🎉</div>
+    <h3>Muvaffaqiyatli o'rnatildi!</h3>
+    <p>TaskFlow qurilmangizga qo'shildi. Endi uni ilovalar orasidan topa olasiz.</p>
+    <button class="btn-save" onclick="document.getElementById('installModalBg').classList.remove('open')">Yopish</button>
+  </div>
+</div>
 
 <script src="app.js"></script>
 </body>

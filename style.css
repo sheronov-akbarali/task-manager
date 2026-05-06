@@ -559,3 +559,115 @@ body {
   .header-right { width:100%; justify-content:space-between; }
   .stats-row { grid-template-columns:1fr 1fr; }
 }
+
+/* ===== INSTALL / DOWNLOAD BANNER ===== */
+.install-banner {
+  position: fixed;
+  bottom: 24px; left: 50%;
+  transform: translateX(-50%) translateY(120px);
+  z-index: 8000;
+  width: calc(100% - 48px);
+  max-width: 600px;
+  background: var(--c-bg2);
+  border: 1.5px solid var(--c-border);
+  border-radius: 20px;
+  box-shadow: 0 12px 48px rgba(99,102,241,.18), 0 4px 16px rgba(0,0,0,.1);
+  transition: transform .5s cubic-bezier(.34,1.56,.64,1), opacity .4s;
+  opacity: 0;
+  pointer-events: none;
+}
+.install-banner.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  pointer-events: all;
+}
+.install-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+}
+.install-app-icon {
+  width: 52px; height: 52px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px; flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(99,102,241,.35);
+}
+.install-info {
+  flex: 1; min-width: 0;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.install-info strong {
+  font-size: 14px; font-weight: 700; color: var(--c-text);
+}
+.install-info span {
+  font-size: 12px; color: var(--c-text2);
+}
+.install-btn {
+  display: flex; align-items: center; gap: 7px;
+  padding: 10px 20px; border-radius: 12px; border: none;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff; font-size: 13px; font-weight: 700;
+  cursor: pointer; white-space: nowrap; flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(99,102,241,.4);
+  transition: .2s;
+}
+.install-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(99,102,241,.5); }
+.install-btn-icon { font-size: 16px; }
+.install-close {
+  width: 30px; height: 30px; border-radius: 8px;
+  border: none; background: var(--c-input);
+  color: var(--c-text2); cursor: pointer;
+  font-size: 14px; flex-shrink: 0; transition: .2s;
+}
+.install-close:hover { background: #fee2e2; color: var(--c-red); }
+
+/* ===== SIDEBAR INSTALL BUTTON ===== */
+.install-side-btn {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 10px; width: 100%; border-radius: 10px;
+  border: 1.5px solid rgba(99,102,241,.4);
+  background: rgba(99,102,241,.12);
+  color: #a5b4fc; cursor: pointer;
+  font-size: 13.5px; font-weight: 600; transition: .2s;
+  white-space: nowrap; margin-top: 8px;
+}
+.install-side-btn:hover {
+  background: rgba(99,102,241,.25);
+  color: #fff;
+  border-color: rgba(99,102,241,.7);
+}
+.sidebar.mini #installSideText { opacity: 0; }
+
+/* ===== INSTALL SUCCESS MODAL ===== */
+.install-modal-bg {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.55);
+  backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 9000; opacity: 0; pointer-events: none;
+  transition: opacity .3s;
+}
+.install-modal-bg.open { opacity: 1; pointer-events: all; }
+.install-modal {
+  background: var(--c-bg2);
+  border-radius: 24px;
+  padding: 40px 36px;
+  text-align: center;
+  max-width: 360px; width: 90%;
+  box-shadow: 0 24px 64px rgba(0,0,0,.2);
+  transform: scale(.85); transition: transform .35s cubic-bezier(.34,1.56,.64,1);
+}
+.install-modal-bg.open .install-modal { transform: scale(1); }
+.install-modal-icon { font-size: 64px; margin-bottom: 16px; }
+.install-modal h3 { font-size: 20px; font-weight: 800; margin-bottom: 10px; color: var(--c-text); }
+.install-modal p { font-size: 14px; color: var(--c-text2); line-height: 1.6; margin-bottom: 24px; }
+
+/* ===== RESPONSIVE ===== */
+@media(max-width: 500px) {
+  .install-banner { bottom: 16px; width: calc(100% - 32px); }
+  .install-info span { display: none; }
+  .install-btn span:last-child { display: none; }
+}
