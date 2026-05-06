@@ -5,15 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>TaskFlow — Vazifalar Boshqaruvchisi</title>
 
-  <!-- PWA -->
+  <!-- PWA meta teglari -->
   <link rel="manifest" href="manifest.json"/>
   <meta name="theme-color" content="#6366f1"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="application-name" content="TaskFlow"/>
+  <!-- iOS uchun -->
   <meta name="apple-mobile-web-app-capable" content="yes"/>
-  <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
   <meta name="apple-mobile-web-app-title" content="TaskFlow"/>
   <link rel="apple-touch-icon" href="icons/icon-192.png"/>
-  <meta name="mobile-web-app-capable" content="yes"/>
-
   <!-- SEO -->
   <meta name="description" content="TaskFlow — vazifalaringizni oson boshqaring, muddatlarni kuzating va eslatmalar oling"/>
 
@@ -305,23 +306,20 @@
 <!-- ===== TOASTS ===== -->
 <div class="toast-wrap" id="toastWrap"></div>
 
-<!-- ===== DOWNLOAD / INSTALL BANNER ===== -->
+<!-- ===== INSTALL BANNER (YouTube kabi) ===== -->
 <div class="install-banner" id="installBanner">
   <div class="install-banner-content">
     <div class="install-app-icon">⚡</div>
     <div class="install-info">
-      <strong>TaskFlow ilovasini o'rnating</strong>
-      <span>Qurilmangizga yuklab oling — oflayn ham ishlaydi!</span>
+      <strong>TaskFlow</strong>
+      <span>Ilovani yuklab oling — oflayn ham ishlaydi!</span>
     </div>
-    <button class="install-btn" id="installBtn">
-      <span class="install-btn-icon">⬇️</span>
-      O'rnatish
-    </button>
+    <button class="install-btn" id="installBtn">⬇️ O'rnatish</button>
     <button class="install-close" id="installClose">✕</button>
   </div>
 </div>
 
-<!-- ===== INSTALL SUCCESS MODAL ===== -->
+<!-- ===== INSTALL SUCCESS ===== -->
 <div class="install-modal-bg" id="installModalBg">
   <div class="install-modal">
     <div class="install-modal-icon">🎉</div>

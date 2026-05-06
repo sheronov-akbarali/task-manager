@@ -530,60 +530,58 @@ function demoVazifalarQosh() {
 // ===== PWA — SERVICE WORKER =====
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
-    navigator.serviceWorker.register('/sw.js').then(function(reg) {
-      console.log('ServiceWorker royxatdan otdi:', reg.scope);
+    navigator.serviceWorker.register('sw.js').then(function(reg) {
+      console.log('SW royxatdan otdi');
     }).catch(function(err) {
-      console.log('ServiceWorker xatosi:', err);
+      console.log('SW xatosi:', err);
     });
   });
 }
 
 // ===== PWA — INSTALL BANNER =====
 var deferredPrompt = null;
-var installBanner = document.getElementById('installBanner');
-var installBtn = document.getElementById('installBtn');
-var installClose = document.getElementById('installClose');
-var installSideBtn = document.getElementById('installSideBtn');
 
-// Brauzer o'rnatish hodisasini ushlash
 window.addEventListener('beforeinstallprompt', function(e) {
   e.preventDefault();
   deferredPrompt = e;
-
-  // Agar allaqachon o'rnatilmagan bo'lsa, bannerni ko'rsat
+  // 2 soniyadan keyin banner chiqar
   if (!localStorage.getItem('taskflow_installed')) {
     setTimeout(function() {
-      installBanner.classList.add('show');
-    }, 2500);
+      var banner = document.getElementById('installBanner');
+      if (banner) banner.classList.add('show');
+    }, 2000);
   }
 });
 
-// O'rnatish tugmasi — banner
-if (installBtn) {
-  installBtn.addEventListener('click', function() {
-    ilovaniOrnat();
-  });
-}
+document.addEventListener('DOMContentLoaded', function() {
+  var installBtn    = document.getElementById('installBtn');
+  var installClose  = document.getElementById('installClose');
+  var installSideBtn = document.getElementById('installSideBtn');
 
-// O'rnatish tugmasi — sidebar
-if (installSideBtn) {
-  installSideBtn.addEventListener('click', function() {
-    if (deferredPrompt) {
-      ilovaniOrnat();
-    } else {
-      // Allaqachon o'rnatilgan yoki qo'llab-quvvatlanmaydi
-      xabar("Ilova allaqachon o'rnatilgan yoki brauzeringiz qo'llab-quvvatlamaydi", 'info');
-    }
-  });
-}
+  if (installBtn) {
+    installBtn.addEventListener('click', function() { ilovaniOrnat(); });
+  }
+  if (installSideBtn) {
+    installSideBtn.addEventListener('click', function() {
+      if (deferredPrompt) {
+        ilovaniOrnat();
+      } else {
+        xabar("Ilova allaqachon o'rnatilgan yoki brauzeringiz qo'llab-quvvatlamaydi", 'info');
+      }
+    });
+  }
+  if (installClose) {
+    installClose.addEventListener('click', function() {
+      document.getElementById('installBanner').classList.remove('show');
+    });
+  }
 
-// Bannerni yopish
-if (installClose) {
-  installClose.addEventListener('click', function() {
-    installBanner.classList.remove('show');
-    localStorage.setItem('taskflow_banner_dismissed', '1');
-  });
-}
+  // Standalone rejimda ishlayotgan bo'lsa
+  if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
+    localStorage.setItem('taskflow_installed', '1');
+    ornatilganKorinish();
+  }
+});
 
 function ilovaniOrnat() {
   if (!deferredPrompt) return;
@@ -591,39 +589,33 @@ function ilovaniOrnat() {
   deferredPrompt.userChoice.then(function(result) {
     if (result.outcome === 'accepted') {
       localStorage.setItem('taskflow_installed', '1');
-      installBanner.classList.remove('show');
-      // Muvaffaqiyat modali
+      document.getElementById('installBanner').classList.remove('show');
       setTimeout(function() {
-        document.getElementById('installModalBg').classList.add('open');
-      }, 500);
+        var m = document.getElementById('installModalBg');
+        if (m) m.classList.add('open');
+      }, 400);
       xabar("TaskFlow muvaffaqiyatli o'rnatildi! 🎉", 'success');
-      // Sidebar tugmasini yangilash
-      if (installSideBtn) {
-        installSideBtn.innerHTML = '<span>✅</span><span id="installSideText">O\'rnatildi</span>';
-        installSideBtn.style.background = 'rgba(16,185,129,.15)';
-        installSideBtn.style.borderColor = 'rgba(16,185,129,.4)';
-        installSideBtn.style.color = '#6ee7b7';
-      }
+      ornatilganKorinish();
     }
     deferredPrompt = null;
   });
 }
 
-// O'rnatilgandan keyin
-window.addEventListener('appinstalled', function() {
-  localStorage.setItem('taskflow_installed', '1');
-  installBanner.classList.remove('show');
-  deferredPrompt = null;
-  xabar("TaskFlow qurilmangizga qo'shildi! 🎉", 'success');
-});
-
-// Agar allaqachon standalone rejimda ishlayotgan bo'lsa
-if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
-  localStorage.setItem('taskflow_installed', '1');
-  if (installSideBtn) {
-    installSideBtn.innerHTML = '<span>✅</span><span id="installSideText">O\'rnatildi</span>';
-    installSideBtn.style.background = 'rgba(16,185,129,.15)';
-    installSideBtn.style.borderColor = 'rgba(16,185,129,.4)';
-    installSideBtn.style.color = '#6ee7b7';
+function ornatilganKorinish() {
+  var btn = document.getElementById('installSideBtn');
+  if (btn) {
+    btn.innerHTML = '<span>✅</span><span id="installSideText">O\'rnatildi</span>';
+    btn.style.background = 'rgba(16,185,129,.15)';
+    btn.style.borderColor = 'rgba(16,185,129,.4)';
+    btn.style.color = '#6ee7b7';
+    btn.style.cursor = 'default';
   }
 }
+
+window.addEventListener('appinstalled', function() {
+  localStorage.setItem('taskflow_installed', '1');
+  document.getElementById('installBanner').classList.remove('show');
+  deferredPrompt = null;
+  xabar("TaskFlow qurilmangizga qo'shildi! 🎉", 'success');
+  ornatilganKorinish();
+});

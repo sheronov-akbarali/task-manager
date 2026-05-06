@@ -2,7 +2,8 @@
   "name": "TaskFlow — Vazifalar Boshqaruvchisi",
   "short_name": "TaskFlow",
   "description": "Vazifalaringizni oson boshqaring, muddatlarni kuzating",
-  "start_url": "/",
+  "start_url": "/task-manager/",
+  "scope": "/task-manager/",
   "display": "standalone",
   "background_color": "#f4f6ff",
   "theme_color": "#6366f1",
@@ -19,14 +20,6 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "icons/screenshot.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "form_factor": "wide"
     }
   ],
   "categories": ["productivity", "utilities"],
