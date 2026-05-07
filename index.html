@@ -2,332 +2,432 @@
 <html lang="uz" data-theme="light">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
   <title>TaskFlow — Vazifalar Boshqaruvchisi</title>
-
-  <!-- PWA meta teglari -->
   <link rel="manifest" href="manifest.json"/>
   <meta name="theme-color" content="#6366f1"/>
   <meta name="mobile-web-app-capable" content="yes"/>
-  <meta name="application-name" content="TaskFlow"/>
-  <!-- iOS uchun -->
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
   <meta name="apple-mobile-web-app-title" content="TaskFlow"/>
   <link rel="apple-touch-icon" href="icons/icon-192.png"/>
-  <!-- SEO -->
-  <meta name="description" content="TaskFlow — vazifalaringizni oson boshqaring, muddatlarni kuzating va eslatmalar oling"/>
-
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
 
-<!-- ===== NOTIFICATION BANNER ===== -->
-<div class="notif-banner" id="notifBanner">
-  <div class="notif-banner-inner">
-    <span class="notif-banner-icon">🔔</span>
-    <span>Eslatmalar uchun bildirishnomaga ruxsat bering</span>
-    <button id="allowNotif" class="notif-allow-btn">Ruxsat berish</button>
-    <button id="dismissBanner" class="notif-dismiss-btn">✕</button>
+<!-- ========== AUTH SAHIFASI ========== -->
+<div class="auth-page" id="authPage">
+  <div class="auth-bg">
+    <div class="auth-blob b1"></div>
+    <div class="auth-blob b2"></div>
+    <div class="auth-blob b3"></div>
+  </div>
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="auth-logo-icon">⚡</div>
+      <h1 class="auth-logo-name">TaskFlow</h1>
+      <p class="auth-logo-sub">Vazifalaringizni oson boshqaring</p>
+    </div>
+
+    <!-- Tabs -->
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tabKirish" onclick="authTab('kirish')">Kirish</button>
+      <button class="auth-tab" id="tabRoyxat" onclick="authTab('royxat')">Ro'yxatdan o'tish</button>
+    </div>
+
+    <!-- Kirish formasi -->
+    <form class="auth-form" id="formKirish" onsubmit="kirish(event)">
+      <div class="auth-field">
+        <label>Foydalanuvchi nomi</label>
+        <div class="auth-input-wrap">
+          <span class="auth-input-ico">👤</span>
+          <input type="text" id="kUsername" placeholder="username" autocomplete="username"/>
+        </div>
+      </div>
+      <div class="auth-field">
+        <label>Parol</label>
+        <div class="auth-input-wrap">
+          <span class="auth-input-ico">🔒</span>
+          <input type="password" id="kPassword" placeholder="••••••••" autocomplete="current-password"/>
+          <button type="button" class="auth-eye" onclick="kozsuzlik('kPassword',this)">👁️</button>
+        </div>
+      </div>
+      <div class="auth-error" id="kirishXato"></div>
+      <button type="submit" class="auth-submit">Kirish →</button>
+      <p class="auth-hint">Demo: <b>admin</b> / <b>1234</b></p>
+    </form>
+
+    <!-- Ro'yxatdan o'tish formasi -->
+    <form class="auth-form" id="formRoyxat" style="display:none" onsubmit="royxatdan(event)">
+      <div class="auth-field">
+        <label>Ism</label>
+        <div class="auth-input-wrap">
+          <span class="auth-input-ico">😊</span>
+          <input type="text" id="rIsm" placeholder="Ismingiz" autocomplete="name"/>
+        </div>
+      </div>
+      <div class="auth-field">
+        <label>Foydalanuvchi nomi</label>
+        <div class="auth-input-wrap">
+          <span class="auth-input-ico">👤</span>
+          <input type="text" id="rUsername" placeholder="username" autocomplete="username"/>
+        </div>
+      </div>
+      <div class="auth-field">
+        <label>Parol</label>
+        <div class="auth-input-wrap">
+          <span class="auth-input-ico">🔒</span>
+          <input type="password" id="rPassword" placeholder="••••••••" autocomplete="new-password"/>
+          <button type="button" class="auth-eye" onclick="kozsuzlik('rPassword',this)">👁️</button>
+        </div>
+      </div>
+      <div class="auth-field">
+        <label>Parolni tasdiqlang</label>
+        <div class="auth-input-wrap">
+          <span class="auth-input-ico">🔒</span>
+          <input type="password" id="rPassword2" placeholder="••••••••" autocomplete="new-password"/>
+        </div>
+      </div>
+      <div class="auth-error" id="royxatXato"></div>
+      <button type="submit" class="auth-submit">Ro'yxatdan o'tish →</button>
+    </form>
   </div>
 </div>
 
-<!-- ===== WRAPPER ===== -->
-<div class="wrapper">
+<!-- ========== ASOSIY ILOVA ========== -->
+<div class="app-page" id="appPage" style="display:none">
 
-  <!-- ===== SIDEBAR ===== -->
-  <aside class="sidebar" id="sidebar">
-    <div class="sidebar-top">
-      <div class="brand">
-        <div class="brand-logo">⚡</div>
-        <span class="brand-name">TaskFlow</span>
-      </div>
-      <button class="burger" id="burgerBtn">
-        <span></span><span></span><span></span>
-      </button>
+  <!-- NOTIFICATION BANNER -->
+  <div class="notif-banner" id="notifBanner">
+    <div class="notif-banner-inner">
+      <span>🔔 Eslatmalar uchun ruxsat bering</span>
+      <button id="allowNotif" class="notif-allow-btn">Ruxsat</button>
+      <button id="dismissBanner" class="notif-dismiss-btn">✕</button>
     </div>
+  </div>
 
-    <div class="sidebar-scroll">
-      <p class="sidebar-section-label">Asosiy</p>
-      <nav class="sidebar-nav">
-        <button class="sn-item active" data-filter="all">
-          <span class="sn-icon">🏠</span>
-          <span class="sn-text">Barcha vazifalar</span>
-          <span class="sn-count" id="cnt-all">0</span>
+  <!-- INSTALL BANNER -->
+  <div class="install-banner" id="installBanner">
+    <div class="install-banner-content">
+      <div class="install-app-icon">⚡</div>
+      <div class="install-info">
+        <strong>TaskFlow</strong>
+        <span>Ilovani yuklab oling — oflayn ham ishlaydi!</span>
+      </div>
+      <button class="install-btn" id="installBtn">⬇️ O'rnatish</button>
+      <button class="install-close" id="installClose">✕</button>
+    </div>
+  </div>
+
+  <div class="wrapper">
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-top">
+        <div class="brand">
+          <div class="brand-logo">⚡</div>
+          <span class="brand-name">TaskFlow</span>
+        </div>
+        <button class="burger" id="burgerBtn">
+          <span></span><span></span><span></span>
         </button>
-        <button class="sn-item" data-filter="bugun">
-          <span class="sn-icon">☀️</span>
-          <span class="sn-text">Bugun</span>
-          <span class="sn-count" id="cnt-bugun">0</span>
+      </div>
+
+      <!-- User info -->
+      <div class="user-info" id="userInfo">
+        <div class="user-avatar" id="userAvatar">A</div>
+        <div class="user-details">
+          <span class="user-name" id="userName">-</span>
+          <span class="user-role">Foydalanuvchi</span>
+        </div>
+      </div>
+
+      <div class="sidebar-scroll">
+        <p class="sidebar-section-label">Asosiy</p>
+        <nav class="sidebar-nav">
+          <button class="sn-item active" data-filter="all">
+            <span class="sn-icon">🏠</span>
+            <span class="sn-text">Barcha vazifalar</span>
+            <span class="sn-count" id="cnt-all">0</span>
+          </button>
+          <button class="sn-item" data-filter="bugun">
+            <span class="sn-icon">☀️</span>
+            <span class="sn-text">Bugun</span>
+            <span class="sn-count" id="cnt-bugun">0</span>
+          </button>
+          <button class="sn-item" data-filter="kelgusi">
+            <span class="sn-icon">📆</span>
+            <span class="sn-text">Kelgusi</span>
+            <span class="sn-count" id="cnt-kelgusi">0</span>
+          </button>
+          <button class="sn-item" data-filter="otgan">
+            <span class="sn-icon">🔥</span>
+            <span class="sn-text">Muddati o'tgan</span>
+            <span class="sn-count danger" id="cnt-otgan">0</span>
+          </button>
+          <button class="sn-item" data-filter="bajarilgan">
+            <span class="sn-icon">✅</span>
+            <span class="sn-text">Bajarilgan</span>
+            <span class="sn-count success" id="cnt-bajarilgan">0</span>
+          </button>
+        </nav>
+
+        <p class="sidebar-section-label">Kategoriyalar</p>
+        <nav class="sidebar-cats">
+          <button class="sc-item active" data-cat="all">
+            <span class="sc-dot" style="background:#6366f1"></span><span>Hammasi</span>
+          </button>
+          <button class="sc-item" data-cat="ish">
+            <span class="sc-dot" style="background:#f59e0b"></span><span>💼 Ish</span>
+          </button>
+          <button class="sc-item" data-cat="shaxsiy">
+            <span class="sc-dot" style="background:#10b981"></span><span>👤 Shaxsiy</span>
+          </button>
+          <button class="sc-item" data-cat="xarid">
+            <span class="sc-dot" style="background:#ec4899"></span><span>🛒 Xarid</span>
+          </button>
+          <button class="sc-item" data-cat="salomatlik">
+            <span class="sc-dot" style="background:#ef4444"></span><span>❤️ Salomatlik</span>
+          </button>
+          <button class="sc-item" data-cat="talim">
+            <span class="sc-dot" style="background:#3b82f6"></span><span>📚 Ta'lim</span>
+          </button>
+        </nav>
+      </div>
+
+      <div class="sidebar-bottom">
+        <button class="theme-btn" id="themeBtn">
+          <span id="themeEmoji">🌙</span>
+          <span id="themeText">Tungi rejim</span>
         </button>
-        <button class="sn-item" data-filter="kelgusi">
-          <span class="sn-icon">📆</span>
-          <span class="sn-text">Kelgusi</span>
-          <span class="sn-count" id="cnt-kelgusi">0</span>
+        <button class="install-side-btn" id="installSideBtn">
+          <span>⬇️</span>
+          <span id="installSideText">Yuklab olish</span>
         </button>
-        <button class="sn-item" data-filter="otgan">
-          <span class="sn-icon">🔥</span>
-          <span class="sn-text">Muddati o'tgan</span>
-          <span class="sn-count danger" id="cnt-otgan">0</span>
+        <button class="logout-btn" id="logoutBtn">
+          <span>��</span>
+          <span id="logoutText">Chiqish</span>
         </button>
-        <button class="sn-item" data-filter="bajarilgan">
-          <span class="sn-icon">✅</span>
-          <span class="sn-text">Bajarilgan</span>
-          <span class="sn-count success" id="cnt-bajarilgan">0</span>
+      </div>
+    </aside>
+
+    <!-- OVERLAY (mobile sidebar yopish) -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- MAIN -->
+    <main class="main" id="mainContent">
+
+      <!-- MOBILE HEADER -->
+      <div class="mobile-header">
+        <button class="mobile-burger" id="mobileBurger">☰</button>
+        <div class="mobile-brand">⚡ TaskFlow</div>
+        <button class="mobile-add" id="mobileAdd">+</button>
+      </div>
+
+      <!-- HEADER -->
+      <header class="header">
+        <div class="header-left">
+          <h1 class="header-title" id="pageTitle">Barcha vazifalar</h1>
+          <p class="header-sub" id="pageSub">Bugun ham maqsadlaringizga erishishingiz mumkin!</p>
+        </div>
+        <div class="header-right">
+          <div class="search-wrap">
+            <span class="search-ico">🔍</span>
+            <input type="text" id="searchInput" placeholder="Qidirish..."/>
+          </div>
+          <button class="bell-btn" id="bellBtn">
+            🔔<span class="bell-dot" id="bellDot"></span>
+          </button>
+          <button class="add-btn" id="openModalBtn">
+            <span>+</span> Yangi vazifa
+          </button>
+        </div>
+      </header>
+
+      <!-- STATS -->
+      <section class="stats-row">
+        <div class="stat-box s-purple">
+          <div class="stat-box-left">
+            <span class="stat-val" id="stJami">0</span>
+            <span class="stat-lbl">Jami</span>
+          </div>
+          <div class="stat-box-icon">📋</div>
+        </div>
+        <div class="stat-box s-green">
+          <div class="stat-box-left">
+            <span class="stat-val" id="stBajarilgan">0</span>
+            <span class="stat-lbl">Bajarilgan</span>
+          </div>
+          <div class="stat-box-icon">✅</div>
+        </div>
+        <div class="stat-box s-orange">
+          <div class="stat-box-left">
+            <span class="stat-val" id="stKutilmoqda">0</span>
+            <span class="stat-lbl">Kutilmoqda</span>
+          </div>
+          <div class="stat-box-icon">⏳</div>
+        </div>
+        <div class="stat-box s-red">
+          <div class="stat-box-left">
+            <span class="stat-val" id="stOtgan">0</span>
+            <span class="stat-lbl">Muddati o'tgan</span>
+          </div>
+          <div class="stat-box-icon">🔥</div>
+        </div>
+      </section>
+
+      <!-- PROGRESS -->
+      <div class="progress-card">
+        <div class="progress-top">
+          <span class="progress-title">Umumiy bajarilish</span>
+          <span class="progress-pct" id="progressPct">0%</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <p class="progress-hint" id="progressHint">Hali birorta vazifa bajarilmagan</p>
+      </div>
+
+      <!-- TOOLBAR -->
+      <div class="toolbar">
+        <div class="priority-tabs">
+          <button class="pt active" data-p="all">Hammasi</button>
+          <button class="pt" data-p="yuqori">🔴 Yuqori</button>
+          <button class="pt" data-p="urta">🟡 O'rta</button>
+          <button class="pt" data-p="past">🟢 Past</button>
+        </div>
+        <div class="sort-box">
+          <select id="sortSel">
+            <option value="yangi">Yangi avval</option>
+            <option value="muddat">Muddat</option>
+            <option value="prioritet">Prioritet</option>
+            <option value="alifbo">Alifbo</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- TASK LIST -->
+      <div class="task-grid" id="taskGrid"></div>
+
+      <!-- EMPTY -->
+      <div class="empty-box" id="emptyBox">
+        <div class="empty-emoji">📭</div>
+        <h3>Vazifalar topilmadi</h3>
+        <p>Yangi vazifa qo'shish uchun tugmani bosing</p>
+        <button class="add-btn" onclick="document.getElementById('openModalBtn').click()">+ Vazifa qo'shish</button>
+      </div>
+
+      <!-- MOBILE BOTTOM NAV -->
+      <nav class="bottom-nav">
+        <button class="bn-item active" data-filter="all">
+          <span>🏠</span><span>Barchasi</span>
+        </button>
+        <button class="bn-item" data-filter="bugun">
+          <span>☀️</span><span>Bugun</span>
+        </button>
+        <button class="bn-item bn-add" id="bnAdd">
+          <span>+</span>
+        </button>
+        <button class="bn-item" data-filter="otgan">
+          <span>🔥</span><span>O'tgan</span>
+        </button>
+        <button class="bn-item" data-filter="bajarilgan">
+          <span>✅</span><span>Bajarilgan</span>
         </button>
       </nav>
 
-      <p class="sidebar-section-label">Kategoriyalar</p>
-      <nav class="sidebar-cats">
-        <button class="sc-item active" data-cat="all">
-          <span class="sc-dot" style="background:#6366f1"></span>
-          <span>Hammasi</span>
-        </button>
-        <button class="sc-item" data-cat="ish">
-          <span class="sc-dot" style="background:#f59e0b"></span>
-          <span>💼 Ish</span>
-        </button>
-        <button class="sc-item" data-cat="shaxsiy">
-          <span class="sc-dot" style="background:#10b981"></span>
-          <span>👤 Shaxsiy</span>
-        </button>
-        <button class="sc-item" data-cat="xarid">
-          <span class="sc-dot" style="background:#ec4899"></span>
-          <span>🛒 Xarid</span>
-        </button>
-        <button class="sc-item" data-cat="salomatlik">
-          <span class="sc-dot" style="background:#ef4444"></span>
-          <span>❤️ Salomatlik</span>
-        </button>
-        <button class="sc-item" data-cat="talim">
-          <span class="sc-dot" style="background:#3b82f6"></span>
-          <span>📚 Ta'lim</span>
-        </button>
-      </nav>
-    </div>
+    </main>
+  </div>
 
-    <div class="sidebar-bottom">
-      <button class="theme-btn" id="themeBtn">
-        <span id="themeEmoji">🌙</span>
-        <span id="themeText">Tungi rejim</span>
-      </button>
-      <button class="install-side-btn" id="installSideBtn">
-        <span>⬇️</span>
-        <span id="installSideText">Ilovani yuklab olish</span>
-      </button>
-    </div>
-  </aside>
-
-  <!-- ===== MAIN ===== -->
-  <main class="main" id="mainContent">
-
-    <!-- HEADER -->
-    <header class="header">
-      <div class="header-left">
-        <h1 class="header-title" id="pageTitle">Barcha vazifalar</h1>
-        <p class="header-sub" id="pageSub">Bugun ham maqsadlaringizga erishishingiz mumkin!</p>
+  <!-- MODAL -->
+  <div class="modal-bg" id="modalBg">
+    <div class="modal-box">
+      <div class="modal-head">
+        <h2 id="modalHeadTitle">Yangi vazifa</h2>
+        <button class="modal-x" id="closeModalBtn">✕</button>
       </div>
-      <div class="header-right">
-        <div class="search-wrap">
-          <span class="search-ico">🔍</span>
-          <input type="text" id="searchInput" placeholder="Qidirish..."/>
-        </div>
-        <button class="bell-btn" id="bellBtn">
-          🔔
-          <span class="bell-dot" id="bellDot"></span>
-        </button>
-        <button class="add-btn" id="openModalBtn">
-          <span class="add-btn-plus">+</span>
-          Yangi vazifa
-        </button>
-      </div>
-    </header>
-
-    <!-- STATS -->
-    <section class="stats-row">
-      <div class="stat-box s-purple">
-        <div class="stat-box-left">
-          <span class="stat-val" id="stJami">0</span>
-          <span class="stat-lbl">Jami vazifalar</span>
-        </div>
-        <div class="stat-box-icon">📋</div>
-      </div>
-      <div class="stat-box s-green">
-        <div class="stat-box-left">
-          <span class="stat-val" id="stBajarilgan">0</span>
-          <span class="stat-lbl">Bajarilgan</span>
-        </div>
-        <div class="stat-box-icon">✅</div>
-      </div>
-      <div class="stat-box s-orange">
-        <div class="stat-box-left">
-          <span class="stat-val" id="stKutilmoqda">0</span>
-          <span class="stat-lbl">Kutilmoqda</span>
-        </div>
-        <div class="stat-box-icon">⏳</div>
-      </div>
-      <div class="stat-box s-red">
-        <div class="stat-box-left">
-          <span class="stat-val" id="stOtgan">0</span>
-          <span class="stat-lbl">Muddati o'tgan</span>
-        </div>
-        <div class="stat-box-icon">🔥</div>
-      </div>
-    </section>
-
-    <!-- PROGRESS -->
-    <div class="progress-card">
-      <div class="progress-top">
-        <span class="progress-title">Umumiy bajarilish</span>
-        <span class="progress-pct" id="progressPct">0%</span>
-      </div>
-      <div class="progress-track">
-        <div class="progress-fill" id="progressFill"></div>
-      </div>
-      <p class="progress-hint" id="progressHint">Hali birorta vazifa bajarilmagan</p>
-    </div>
-
-    <!-- TOOLBAR -->
-    <div class="toolbar">
-      <div class="priority-tabs">
-        <button class="pt active" data-p="all">Hammasi</button>
-        <button class="pt" data-p="yuqori">🔴 Yuqori</button>
-        <button class="pt" data-p="urta">🟡 O'rta</button>
-        <button class="pt" data-p="past">🟢 Past</button>
-      </div>
-      <div class="sort-box">
-        <label>Saralash:</label>
-        <select id="sortSel">
-          <option value="yangi">Yangi avval</option>
-          <option value="muddat">Muddat bo'yicha</option>
-          <option value="prioritet">Prioritet bo'yicha</option>
-          <option value="alifbo">Alifbo bo'yicha</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- TASK LIST -->
-    <div class="task-grid" id="taskGrid"></div>
-
-    <!-- EMPTY -->
-    <div class="empty-box" id="emptyBox">
-      <div class="empty-emoji">📭</div>
-      <h3>Vazifalar topilmadi</h3>
-      <p>Yangi vazifa qo'shish uchun tugmani bosing</p>
-      <button class="add-btn" onclick="document.getElementById('openModalBtn').click()">+ Vazifa qo'shish</button>
-    </div>
-
-  </main>
-</div>
-
-<!-- ===== MODAL ===== -->
-<div class="modal-bg" id="modalBg">
-  <div class="modal-box" id="modalBox">
-    <div class="modal-head">
-      <h2 id="modalHeadTitle">Yangi vazifa</h2>
-      <button class="modal-x" id="closeModalBtn">✕</button>
-    </div>
-    <div class="modal-body">
-
-      <div class="field">
-        <label>Vazifa nomi <span class="req">*</span></label>
-        <input type="text" id="fTitle" placeholder="Masalan: Hisobot tayyorlash" maxlength="100"/>
-        <span class="field-count" id="fTitleCount">0/100</span>
-      </div>
-
-      <div class="field">
-        <label>Tavsif</label>
-        <textarea id="fDesc" placeholder="Qo'shimcha ma'lumot..." rows="3"></textarea>
-      </div>
-
-      <div class="field-row">
+      <div class="modal-body">
         <div class="field">
-          <label>Sana</label>
-          <input type="date" id="fDate"/>
+          <label>Vazifa nomi <span class="req">*</span></label>
+          <input type="text" id="fTitle" placeholder="Masalan: Hisobot tayyorlash" maxlength="100"/>
+          <span class="field-count" id="fTitleCount">0/100</span>
         </div>
         <div class="field">
-          <label>Vaqt</label>
-          <input type="time" id="fTime"/>
+          <label>Tavsif</label>
+          <textarea id="fDesc" placeholder="Qo'shimcha ma'lumot..." rows="3"></textarea>
         </div>
-      </div>
-
-      <div class="field-row">
+        <div class="field-row">
+          <div class="field">
+            <label>Sana</label>
+            <input type="date" id="fDate"/>
+          </div>
+          <div class="field">
+            <label>Vaqt</label>
+            <input type="time" id="fTime"/>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Prioritet</label>
+            <select id="fPriority">
+              <option value="past">🟢 Past</option>
+              <option value="urta" selected>🟡 O'rta</option>
+              <option value="yuqori">🔴 Yuqori</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Kategoriya</label>
+            <select id="fCat">
+              <option value="ish">💼 Ish</option>
+              <option value="shaxsiy">👤 Shaxsiy</option>
+              <option value="xarid">🛒 Xarid</option>
+              <option value="salomatlik">❤️ Salomatlik</option>
+              <option value="talim">📚 Ta'lim</option>
+            </select>
+          </div>
+        </div>
         <div class="field">
-          <label>Prioritet</label>
-          <select id="fPriority">
-            <option value="past">🟢 Past</option>
-            <option value="urta" selected>🟡 O'rta</option>
-            <option value="yuqori">🔴 Yuqori</option>
+          <label>Eslatma vaqti</label>
+          <select id="fReminder">
+            <option value="0">Eslatma yo'q</option>
+            <option value="5">5 daqiqa oldin</option>
+            <option value="15">15 daqiqa oldin</option>
+            <option value="30">30 daqiqa oldin</option>
+            <option value="60">1 soat oldin</option>
+            <option value="1440">1 kun oldin</option>
           </select>
         </div>
         <div class="field">
-          <label>Kategoriya</label>
-          <select id="fCat">
-            <option value="ish">💼 Ish</option>
-            <option value="shaxsiy">👤 Shaxsiy</option>
-            <option value="xarid">🛒 Xarid</option>
-            <option value="salomatlik">❤️ Salomatlik</option>
-            <option value="talim">📚 Ta'lim</option>
-          </select>
+          <label>Kichik vazifalar</label>
+          <div class="sub-row">
+            <input type="text" id="fSubInput" placeholder="Kichik vazifa kiriting..."/>
+            <button type="button" id="addSubBtn" class="sub-add-btn">+</button>
+          </div>
+          <ul class="sub-list" id="subList"></ul>
         </div>
       </div>
-
-      <div class="field">
-        <label>Eslatma vaqti</label>
-        <select id="fReminder">
-          <option value="0">Eslatma yo'q</option>
-          <option value="5">5 daqiqa oldin</option>
-          <option value="15">15 daqiqa oldin</option>
-          <option value="30">30 daqiqa oldin</option>
-          <option value="60">1 soat oldin</option>
-          <option value="1440">1 kun oldin</option>
-        </select>
+      <div class="modal-foot">
+        <button class="btn-cancel" id="cancelModalBtn">Bekor qilish</button>
+        <button class="btn-save" id="saveTaskBtn">💾 Saqlash</button>
       </div>
-
-      <div class="field">
-        <label>Kichik vazifalar</label>
-        <div class="sub-row">
-          <input type="text" id="fSubInput" placeholder="Kichik vazifa kiriting..."/>
-          <button type="button" id="addSubBtn" class="sub-add-btn">+</button>
-        </div>
-        <ul class="sub-list" id="subList"></ul>
-      </div>
-
-    </div>
-    <div class="modal-foot">
-      <button class="btn-cancel" id="cancelModalBtn">Bekor qilish</button>
-      <button class="btn-save" id="saveTaskBtn">💾 Saqlash</button>
     </div>
   </div>
-</div>
 
-<!-- ===== TOASTS ===== -->
-<div class="toast-wrap" id="toastWrap"></div>
+  <!-- TOASTS -->
+  <div class="toast-wrap" id="toastWrap"></div>
 
-<!-- ===== INSTALL BANNER (YouTube kabi) ===== -->
-<div class="install-banner" id="installBanner">
-  <div class="install-banner-content">
-    <div class="install-app-icon">⚡</div>
-    <div class="install-info">
-      <strong>TaskFlow</strong>
-      <span>Ilovani yuklab oling — oflayn ham ishlaydi!</span>
+  <!-- INSTALL SUCCESS -->
+  <div class="install-modal-bg" id="installModalBg">
+    <div class="install-modal">
+      <div class="install-modal-icon">🎉</div>
+      <h3>Muvaffaqiyatli o'rnatildi!</h3>
+      <p>TaskFlow qurilmangizga qo'shildi.</p>
+      <button class="btn-save" onclick="document.getElementById('installModalBg').classList.remove('open')">Yopish</button>
     </div>
-    <button class="install-btn" id="installBtn">⬇️ O'rnatish</button>
-    <button class="install-close" id="installClose">✕</button>
   </div>
-</div>
 
-<!-- ===== INSTALL SUCCESS ===== -->
-<div class="install-modal-bg" id="installModalBg">
-  <div class="install-modal">
-    <div class="install-modal-icon">🎉</div>
-    <h3>Muvaffaqiyatli o'rnatildi!</h3>
-    <p>TaskFlow qurilmangizga qo'shildi. Endi uni ilovalar orasidan topa olasiz.</p>
-    <button class="btn-save" onclick="document.getElementById('installModalBg').classList.remove('open')">Yopish</button>
-  </div>
-</div>
+</div><!-- /app-page -->
 
 <script src="app.js"></script>
 </body>
